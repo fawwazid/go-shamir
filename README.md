@@ -54,6 +54,7 @@ if err != nil {
     panic(err)
 }
 
+// threshold must match the value used during Split (3 in this case)
 recovered, err := goshamir.Combine(decoded[:3], 3)
 if err != nil {
     panic(err)
