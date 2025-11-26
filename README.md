@@ -1,4 +1,4 @@
-# go-shamir
+# Go - Shamir's Secret Sharing
 
 A small Go package that implements Shamir's Secret Sharing for arbitrary byte slices.
 
