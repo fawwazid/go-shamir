@@ -24,7 +24,7 @@ type Share struct {
 //   - secret: the secret data to be split.
 //   - totalShares: total number of shares to generate (n).
 //   - threshold: minimum number of shares required to reconstruct
-//     the secret (k), where 1 <= threshold <= totalShares.
+//     the secret (k), where 2 <= threshold <= totalShares.
 //
 // Returns:
 //   - slice of Share
@@ -44,9 +44,6 @@ func Split(secret []byte, totalShares, threshold int) ([]Share, error) {
 	}
 
 	prime := defaultPrime()
-	if prime.Cmp(big.NewInt(0)) == 0 {
-		return nil, errors.New("failed to initialize prime")
-	}
 
 	shares := make([]Share, totalShares)
 
@@ -96,9 +93,6 @@ func Combine(shares []Share, threshold int) ([]byte, error) {
 	}
 
 	prime := defaultPrime()
-	if prime.Cmp(big.NewInt(0)) == 0 {
-		return nil, errors.New("failed to initialize prime")
-	}
 
 	// Validate share indices: non-zero and unique
 	indices := make(map[uint8]bool, threshold)
