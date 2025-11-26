@@ -3,9 +3,13 @@ package goshamir
 import (
 	"crypto/rand"
 	"errors"
+	"fmt"
 	"math/big"
 )
 
+// fieldPrime is the largest prime less than 256, used for the finite field.
+// This means secret bytes must be in the range [0, 250] for correct reconstruction.
+// Bytes with values 251-255 cannot be represented in this finite field.
 const fieldPrime = 251
 
 // Share represents a single piece (share) of the secret.
@@ -43,6 +47,14 @@ func Split(secret []byte, totalShares, threshold int) ([]Share, error) {
 		return nil, errors.New("totalShares must be <= 255 (uint8 index limit)")
 	}
 
+	// Validate that all secret bytes are within the finite field range.
+	// With fieldPrime = 251, bytes must be in [0, 250].
+	for i, b := range secret {
+		if int(b) >= fieldPrime {
+			return nil, fmt.Errorf("secret byte at position %d has value %d, which exceeds the finite field limit of %d", i, b, fieldPrime-1)
+		}
+	}
+
 	prime := defaultPrime()
 
 	shares := make([]Share, totalShares)
@@ -55,7 +67,7 @@ func Split(secret []byte, totalShares, threshold int) ([]Share, error) {
 		for i := 1; i < threshold; i++ {
 			c, err := randIntMod(prime)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to generate random coefficient: %w", err)
 			}
 			coeffs[i] = c
 		}
@@ -80,7 +92,9 @@ func Split(secret []byte, totalShares, threshold int) ([]Share, error) {
 // All shares must have the same Value length, otherwise an error is returned.
 //
 // If more than "threshold" shares are provided, only the first "threshold" shares
-// from the input slice will be used for reconstruction.
+// from the input slice will be used for reconstruction. This is mathematically
+// correct because any subset of "threshold" shares is sufficient to reconstruct
+// the secret using Lagrange interpolation.
 func Combine(shares []Share, threshold int) ([]byte, error) {
 	if len(shares) == 0 {
 		return nil, errors.New("no shares provided")
@@ -196,7 +210,7 @@ func modInverse(a, prime *big.Int) (*big.Int, error) {
 	a = new(big.Int).Mod(a, prime)
 	inv := new(big.Int).ModInverse(a, prime)
 	if inv == nil {
-		return nil, errors.New("no modular inverse exists")
+		return nil, errors.New("modular inverse does not exist; this indicates corrupted or incompatible shares")
 	}
 	return inv, nil
 }
