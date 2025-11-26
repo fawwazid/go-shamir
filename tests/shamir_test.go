@@ -186,3 +186,46 @@ func TestCombineWithMoreThanThresholdShares(t *testing.T) {
 		t.Fatalf("expected %q, got %q", secret, recovered)
 	}
 }
+
+func TestSplitSecretBytesExceedFieldPrime(t *testing.T) {
+	// Test that secrets containing bytes >= 251 are rejected
+	// The fieldPrime is 251, so valid byte values are 0-250
+
+	// Test with byte value 251
+	secret251 := []byte{251}
+	_, err := goshamir.Split(secret251, 5, 3)
+	if err == nil {
+		t.Fatal("expected error for secret byte value 251")
+	}
+
+	// Test with byte value 255
+	secret255 := []byte{255}
+	_, err = goshamir.Split(secret255, 5, 3)
+	if err == nil {
+		t.Fatal("expected error for secret byte value 255")
+	}
+
+	// Test with mixed valid and invalid bytes
+	mixedSecret := []byte{100, 200, 252}
+	_, err = goshamir.Split(mixedSecret, 5, 3)
+	if err == nil {
+		t.Fatal("expected error for secret containing byte >= 251")
+	}
+
+	// Test that bytes up to 250 are valid
+	validSecret := []byte{0, 1, 100, 200, 250}
+	shares, err := goshamir.Split(validSecret, 5, 3)
+	if err != nil {
+		t.Fatalf("Split error for valid secret: %v", err)
+	}
+
+	recovered, err := goshamir.Combine(shares[:3], 3)
+	if err != nil {
+		t.Fatalf("Combine error: %v", err)
+	}
+	for i := range validSecret {
+		if recovered[i] != validSecret[i] {
+			t.Fatalf("byte %d: expected %d, got %d", i, validSecret[i], recovered[i])
+		}
+	}
+}
