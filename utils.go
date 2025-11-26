@@ -56,7 +56,7 @@ func decodeSingleShareFromHex(v string) (Share, error) {
 
 	bytes, err := hex.DecodeString(parts[1])
 	if err != nil {
-		return Share{}, err
+		return Share{}, ErrInvalidEncodedShare
 	}
 
 	return Share{Index: uint8(idx64), Value: bytes}, nil

@@ -6,7 +6,7 @@ import (
 	"math/big"
 )
 
-const fieldPrime = 257
+const fieldPrime = 251
 
 // Share represents a single piece (share) of the secret.
 //
@@ -81,7 +81,13 @@ func Split(secret []byte, totalShares, threshold int) ([]Share, error) {
 // Combine reconstructs the original secret from at least "threshold" shares.
 //
 // All shares must have the same Value length, otherwise an error is returned.
+//
+// If more than "threshold" shares are provided, only the first "threshold" shares
+// from the input slice will be used for reconstruction.
 func Combine(shares []Share, threshold int) ([]byte, error) {
+	if len(shares) == 0 {
+		return nil, errors.New("no shares provided")
+	}
 	if len(shares) < threshold {
 		return nil, errors.New("number of shares is less than threshold")
 	}
@@ -92,6 +98,18 @@ func Combine(shares []Share, threshold int) ([]byte, error) {
 	prime := defaultPrime()
 	if prime.Cmp(big.NewInt(0)) == 0 {
 		return nil, errors.New("failed to initialize prime")
+	}
+
+	// Validate share indices: non-zero and unique
+	indices := make(map[uint8]bool, threshold)
+	for _, s := range shares[:threshold] {
+		if s.Index == 0 {
+			return nil, errors.New("share index must be non-zero")
+		}
+		if indices[s.Index] {
+			return nil, errors.New("duplicate share index found")
+		}
+		indices[s.Index] = true
 	}
 
 	length := len(shares[0].Value)
@@ -146,15 +164,15 @@ func Combine(shares []Share, threshold int) ([]byte, error) {
 
 // defaultPrime returns the prime used for the finite field.
 //
-// Currently 257 (slightly larger than 256) is used so each
-// byte can be represented safely in the field.
+// Currently 251 (the largest prime less than 256) is used so each
+// share value fits safely in a byte.
 func defaultPrime() *big.Int {
 	return big.NewInt(fieldPrime)
 }
 
 // randIntMod returns a random integer in [0, prime).
 func randIntMod(prime *big.Int) (*big.Int, error) {
-	max := new(big.Int).Sub(prime, big.NewInt(1))
+	max := prime
 	n, err := rand.Int(rand.Reader, max)
 	if err != nil {
 		return nil, err
