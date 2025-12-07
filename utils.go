@@ -10,10 +10,8 @@ import (
 // ErrInvalidEncodedShare indicates an invalid encoded share format.
 var ErrInvalidEncodedShare = errors.New("invalid encoded share format")
 
-// EncodeSharesToHex converts a list of shares into a hex string
-// representation that is easy to store or transmit.
-//
-// Format: "index:hexvalue" for each share.
+// EncodeSharesToHex converts a list of shares into a slice of hex strings.
+// Each string is formatted as "index:hexvalue", which is safe for storage or transmission.
 func EncodeSharesToHex(shares []Share) []string {
 	result := make([]string, len(shares))
 	for i, s := range shares {
@@ -22,8 +20,8 @@ func EncodeSharesToHex(shares []Share) []string {
 	return result
 }
 
-// DecodeSharesFromHex converts a list of encoded strings produced by
-// EncodeSharesToHex back into []Share.
+// DecodeSharesFromHex takes a slice of hex strings (as produced by EncodeSharesToHex)
+// and decodes them back into a slice of Shares.
 func DecodeSharesFromHex(data []string) ([]Share, error) {
 	shares := make([]Share, len(data))
 	for i, v := range data {

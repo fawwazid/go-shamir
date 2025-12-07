@@ -1,38 +1,30 @@
+// Package goshamir implements Shamir's Secret Sharing scheme over the finite field GF(2^8).
+// Provides capabilities to split a secret into multiple shares and reconstruct it
+// from a subset of those shares.
 package goshamir
 
 import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"math/big"
 )
 
-// fieldPrime is the largest prime less than 256, used for the finite field.
-// This means secret bytes must be in the range [0, 250] for correct reconstruction.
-// Bytes with values 251-255 cannot be represented in this finite field.
-const fieldPrime = 251
-
 // Share represents a single piece (share) of the secret.
-//
-// Index starts from 1 to match common Shamir references.
-// Value holds the share data in the finite field used.
+// Index is the x-coordinate (1-255) and Value is the y-coordinate data.
 type Share struct {
 	Index uint8
 	Value []byte
 }
 
-// Split divides a secret into multiple shares using
-// Shamir's Secret Sharing scheme.
+// Split divides a secret into n shares (totalShares), requiring k shares (threshold)
+// to reconstruct the secret.
 //
-// Parameters:
-//   - secret: the secret data to be split.
-//   - totalShares: total number of shares to generate (n).
-//   - threshold: minimum number of shares required to reconstruct
-//     the secret (k), where 2 <= threshold <= totalShares.
+// It returns a slice of Share and an error if the inputs are invalid.
 //
-// Returns:
-//   - slice of Share
-//   - error if parameters are invalid or processing fails
+// Properties:
+//   - Field: GF(2^8) with Rijndael irreducible polynomial 0x11B.
+//   - Max shares: 255.
+//   - Secret size: Any length.
 func Split(secret []byte, totalShares, threshold int) ([]Share, error) {
 	if len(secret) == 0 {
 		return nil, errors.New("secret must not be empty")
@@ -47,54 +39,45 @@ func Split(secret []byte, totalShares, threshold int) ([]Share, error) {
 		return nil, errors.New("totalShares must be <= 255 (uint8 index limit)")
 	}
 
-	// Validate that all secret bytes are within the finite field range.
-	// With fieldPrime = 251, bytes must be in [0, 250].
-	for i, b := range secret {
-		if int(b) >= fieldPrime {
-			return nil, fmt.Errorf("secret byte at position %d has value %d, which exceeds the finite field limit of %d", i, b, fieldPrime-1)
-		}
+	shares := make([]Share, totalShares)
+	// Initialize indices
+	for i := 0; i < totalShares; i++ {
+		shares[i] = Share{Index: uint8(i + 1), Value: make([]byte, len(secret))}
 	}
 
-	prime := defaultPrime()
+	// Process the secret byte by byte
+	for i, b := range secret {
+		// Generate random polynomial coefficients for this byte.
+		// coeffs[0] = b (secret)
+		// we need (threshold-1) random coefficients.
+		coeffs := make([]uint8, threshold)
+		coeffs[0] = b
 
-	shares := make([]Share, totalShares)
-
-	// Process the secret byte by byte (one polynomial per byte).
-	for bytePos, b := range secret {
-		coeffs := make([]*big.Int, threshold)
-		coeffs[0] = big.NewInt(int64(b)) // constant term is the secret byte
-		// Generate other random coefficients
-		for i := 1; i < threshold; i++ {
-			c, err := randIntMod(prime)
-			if err != nil {
-				return nil, fmt.Errorf("failed to generate random coefficient: %w", err)
-			}
-			coeffs[i] = c
+		// Random coefficients
+		randBytes := make([]byte, threshold-1)
+		if _, err := rand.Read(randBytes); err != nil {
+			return nil, fmt.Errorf("rng error: %v", err)
+		}
+		for j := 0; j < threshold-1; j++ {
+			coeffs[j+1] = randBytes[j]
 		}
 
-		// Evaluate the polynomial for each x (share index)
-		for i := 0; i < totalShares; i++ {
-			x := big.NewInt(int64(i + 1)) // index starts at 1
-			fx := evalPolynomial(coeffs, x, prime)
-			if bytePos == 0 {
-				shares[i] = Share{Index: uint8(i + 1), Value: []byte{}}
-			}
-			// fx is in [0, prime). For a per-byte field, cast back to byte.
-			shares[i].Value = append(shares[i].Value, byte(fx.Int64()))
+		// Evaluate polynomial for each share
+		for shareIdx := 0; shareIdx < totalShares; shareIdx++ {
+			x := uint8(shareIdx + 1)
+			y := evalPoly(coeffs, x)
+			shares[shareIdx].Value[i] = y
 		}
 	}
 
 	return shares, nil
 }
 
-// Combine reconstructs the original secret from at least "threshold" shares.
+// Combine reconstructs the original secret from at least threshold shares.
+// It uses Lagrange interpolation over GF(2^8).
 //
-// All shares must have the same Value length, otherwise an error is returned.
-//
-// If more than "threshold" shares are provided, only the first "threshold" shares
-// from the input slice will be used for reconstruction. This is mathematically
-// correct because any subset of "threshold" shares is sufficient to reconstruct
-// the secret using Lagrange interpolation.
+// The length of the provided shares slice must be at least threshold.
+// If it is larger, only the first threshold shares are used.
 func Combine(shares []Share, threshold int) ([]byte, error) {
 	if len(shares) == 0 {
 		return nil, errors.New("no shares provided")
@@ -105,8 +88,6 @@ func Combine(shares []Share, threshold int) ([]byte, error) {
 	if threshold < 2 {
 		return nil, errors.New("threshold must be at least 2")
 	}
-
-	prime := defaultPrime()
 
 	// Validate share indices: non-zero and unique
 	indices := make(map[uint8]bool, threshold)
@@ -129,88 +110,142 @@ func Combine(shares []Share, threshold int) ([]byte, error) {
 
 	secret := make([]byte, length)
 
-	// Reconstruct each byte using Lagrange interpolation at x = 0.
-	for bytePos := 0; bytePos < length; bytePos++ {
-		result := big.NewInt(0)
-		for i := 0; i < threshold; i++ {
-			xi := big.NewInt(int64(shares[i].Index))
-			yi := big.NewInt(int64(shares[i].Value[bytePos]))
+	// x coordinates for the first 'threshold' shares
+	xs := make([]uint8, threshold)
+	for i := 0; i < threshold; i++ {
+		xs[i] = shares[i].Index
+	}
 
-			num := big.NewInt(1)
-			den := big.NewInt(1)
-			for j := 0; j < threshold; j++ {
-				if i == j {
+	// Lagrange Interpolation at x=0
+	// L(0) = sum( y_i * basis_i(0) )
+	// basis_i(0) = product( (0 - x_j) / (x_i - x_j) ) for j != i
+	// In GF(2^8), subtraction is XOR (same as addition).
+	// So (0 - x_j) = (0 ^ x_j) = x_j
+	// basis_i(0) = product( x_j / (x_i ^ x_j) )
+
+	for i := 0; i < length; i++ {
+		// Reconstruct i-th byte of secret
+		// ys are the values of shares at byte i
+		ys := make([]uint8, threshold)
+		for j := 0; j < threshold; j++ {
+			ys[j] = shares[j].Value[i]
+		}
+
+		result := uint8(0)
+		for j := 0; j < threshold; j++ {
+			num := uint8(1) // numerator
+			den := uint8(1) // denominator
+
+			for m := 0; m < threshold; m++ {
+				if m == j {
 					continue
 				}
-				xj := big.NewInt(int64(shares[j].Index))
-				num.Mul(num, new(big.Int).Neg(xj))
-				num.Mod(num, prime)
-
-				tmp := new(big.Int).Sub(xi, xj)
-				den.Mul(den, tmp)
-				den.Mod(den, prime)
+				// num *= x_m
+				num = mul(num, xs[m])
+				// den *= (x_j - x_m) -> x_j ^ x_m
+				den = mul(den, xs[j]^xs[m])
 			}
 
-			invDen, err := modInverse(den, prime)
-			if err != nil {
-				return nil, err
-			}
+			// basis = num / den
+			basis := div(num, den)
 
-			li := new(big.Int).Mul(num, invDen)
-			li.Mod(li, prime)
+			// term = y_j * basis
+			term := mul(ys[j], basis)
 
-			term := new(big.Int).Mul(yi, li)
-			term.Mod(term, prime)
-			result.Add(result, term)
-			result.Mod(result, prime)
+			result ^= term // Add to result
 		}
-		secret[bytePos] = byte(result.Uint64())
+		secret[i] = result
 	}
 
 	return secret, nil
 }
 
-// defaultPrime returns the prime used for the finite field.
-//
-// Currently 251 (the largest prime less than 256) is used so each
-// share value fits safely in a byte.
-func defaultPrime() *big.Int {
-	return big.NewInt(fieldPrime)
-}
-
-// randIntMod returns a random integer in [0, prime).
-func randIntMod(prime *big.Int) (*big.Int, error) {
-	max := prime
-	n, err := rand.Int(rand.Reader, max)
-	if err != nil {
-		return nil, err
-	}
-	return n, nil
-}
-
-// evalPolynomial evaluates a polynomial with coefficients "coeffs"
-// at point x, with all operations performed modulo prime.
-func evalPolynomial(coeffs []*big.Int, x, prime *big.Int) *big.Int {
-	result := big.NewInt(0)
-	power := big.NewInt(1)
-	for _, c := range coeffs {
-		term := new(big.Int).Mul(c, power)
-		term.Mod(term, prime)
-		result.Add(result, term)
-		result.Mod(result, prime)
-
-		power.Mul(power, x)
-		power.Mod(power, prime)
+// evalPoly evaluates polynomial with coeffs at x in GF(2^8).
+func evalPoly(coeffs []uint8, x uint8) uint8 {
+	// Horner's method
+	// c_0 + x(c_1 + x(c_2 + ...))
+	// But our coeffs are normally index increasing: a0 + a1*x + ...
+	// So we process from high degree down to 0.
+	degree := len(coeffs) - 1
+	result := coeffs[degree]
+	for i := degree - 1; i >= 0; i-- {
+		result = mul(result, x)
+		result = result ^ coeffs[i] // add
 	}
 	return result
 }
 
-// modInverse computes the modular inverse a^-1 modulo prime.
-func modInverse(a, prime *big.Int) (*big.Int, error) {
-	a = new(big.Int).Mod(a, prime)
-	inv := new(big.Int).ModInverse(a, prime)
-	if inv == nil {
-		return nil, errors.New("modular inverse does not exist; this indicates corrupted or incompatible shares")
+// --- GF(2^8) Arithmetic using Log/Exp tables ---
+// Irreducible polynomial: x^8 + x^4 + x^3 + x + 1 (0x11B)
+// Generator: 3
+
+var (
+	gfExp [512]uint8
+	gfLog [256]uint8
+)
+
+func init() {
+	// Generate Log and Exp tables for GF(2^8)
+	// Base is 3.
+	x := 1
+	for i := 0; i < 255; i++ {
+		gfExp[i] = uint8(x)
+		gfLog[x] = uint8(i)
+
+		// Multiply x by 3
+		// x = x << 1 ^ (x & 0x80 ? 0x11B : 0) ^ x (since 3 = 2^1 + 1)
+		// Wait, simple way: mul(x, 3).
+		// Let's implement primitive LFSR step for generating the table manually.
+
+		// x * 3 corresponds to x * (x + 1) = x^2 + x ? NO.
+		// "3" is polynomial x + 1.
+
+		// Actually, standard constructing uses generator 3 (0x03).
+
+		// x_next = x * 3
+		// We can do standard shift multiply logic here just for table gen.
+
+		y := x << 1
+		if x&0x80 != 0 {
+			y ^= 0x11B
+		}
+		y ^= x // add x (multiply by 1)
+
+		x = y
 	}
-	return inv, nil
+	// Optimization for avoiding modulo 255 checks in mul
+	for i := 255; i < 512; i++ {
+		gfExp[i] = gfExp[i-255]
+	}
+	// log[0] is undefined, but unused or handled.
+}
+
+// mul multiplies two numbers in GF(2^8).
+func mul(a, b uint8) uint8 {
+	if a == 0 || b == 0 {
+		return 0
+	}
+	// return gfExp[(int(gfLog[a]) + int(gfLog[b])) % 255]
+	// Using extended Exp table to avoid modulo:
+	return gfExp[int(gfLog[a])+int(gfLog[b])]
+}
+
+// div divides a by b in GF(2^8).
+func div(a, b uint8) uint8 {
+	if a == 0 {
+		return 0
+	}
+	if b == 0 {
+		// Division by zero is undefined. In SSS context this shouldn't happen
+		// if indices are distinct.
+		panic("division by zero in GF(2^8)")
+	}
+	// a / b = a * b^-1
+	// log(a/b) = log(a) - log(b) (mod 255)
+	// If log(a) < log(b), add 255.
+	diff := int(gfLog[a]) - int(gfLog[b])
+	if diff < 0 {
+		diff += 255
+	}
+	return gfExp[diff]
 }
