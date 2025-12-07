@@ -16,7 +16,9 @@ func TestDivisionByZero(t *testing.T) {
 		t.Fatalf("unexpected error message: %v", err)
 	}
 
-	// Test division by zero with zero numerator (should return 0 without error)
+	// Test division with zero numerator and zero denominator.
+	// The implementation checks a==0 first and returns 0, so div(0,0) returns (0, nil).
+	// This is acceptable because 0/0 never occurs in valid Shamir operations.
 	result, err := div(0, 0)
 	if err != nil {
 		t.Fatalf("unexpected error for 0/0: %v", err)
