@@ -122,6 +122,10 @@ func Combine(shares []Share, threshold int) ([]byte, error) {
 	// In GF(2^8), subtraction is XOR (same as addition).
 	// So (0 - x_j) = (0 ^ x_j) = x_j
 	// basis_i(0) = product( x_j / (x_i ^ x_j) )
+	//
+	// Note: The denominator (xs[j] ^ xs[m]) is guaranteed to be non-zero
+	// because duplicate indices are checked above (lines 93-102), ensuring
+	// that xs[j] != xs[m] for all j != m.
 
 	for i := 0; i < length; i++ {
 		// Reconstruct i-th byte of secret
@@ -147,7 +151,10 @@ func Combine(shares []Share, threshold int) ([]byte, error) {
 			}
 
 			// basis = num / den
-			basis := div(num, den)
+			basis, err := div(num, den)
+			if err != nil {
+				return nil, err
+			}
 
 			// term = y_j * basis
 			term := mul(ys[j], basis)
@@ -192,32 +199,21 @@ func init() {
 		gfExp[i] = uint8(x)
 		gfLog[x] = uint8(i)
 
-		// Multiply x by 3
-		// x = x << 1 ^ (x & 0x80 ? 0x11B : 0) ^ x (since 3 = 2^1 + 1)
-		// Wait, simple way: mul(x, 3).
-		// Let's implement primitive LFSR step for generating the table manually.
-
-		// x * 3 corresponds to x * (x + 1) = x^2 + x ? NO.
-		// "3" is polynomial x + 1.
-
-		// Actually, standard constructing uses generator 3 (0x03).
-
-		// x_next = x * 3
-		// We can do standard shift multiply logic here just for table gen.
-
+		// Multiply x by 3 in GF(2^8) using the reduction polynomial 0x11B.
+		// This is used to generate the exponentiation and logarithm tables for the field.
 		y := x << 1
 		if x&0x80 != 0 {
 			y ^= 0x11B
 		}
 		y ^= x // add x (multiply by 1)
 
-		x = y
+		x = y & 0xFF
 	}
 	// Optimization for avoiding modulo 255 checks in mul
 	for i := 255; i < 512; i++ {
 		gfExp[i] = gfExp[i-255]
 	}
-	// log[0] is undefined, but unused or handled.
+	// gfLog[0] is unused because mul() and div() handle zero inputs explicitly.
 }
 
 // mul multiplies two numbers in GF(2^8).
@@ -230,15 +226,13 @@ func mul(a, b uint8) uint8 {
 	return gfExp[int(gfLog[a])+int(gfLog[b])]
 }
 
-// div divides a by b in GF(2^8).
-func div(a, b uint8) uint8 {
+// div divides a by b in GF(2^8), returning an error if b is zero.
+func div(a, b uint8) (uint8, error) {
 	if a == 0 {
-		return 0
+		return 0, nil
 	}
 	if b == 0 {
-		// Division by zero is undefined. In SSS context this shouldn't happen
-		// if indices are distinct.
-		panic("division by zero in GF(2^8)")
+		return 0, errors.New("division by zero in GF(2^8)")
 	}
 	// a / b = a * b^-1
 	// log(a/b) = log(a) - log(b) (mod 255)
@@ -247,5 +241,5 @@ func div(a, b uint8) uint8 {
 	if diff < 0 {
 		diff += 255
 	}
-	return gfExp[diff]
+	return gfExp[diff], nil
 }

@@ -69,7 +69,7 @@ if err != nil {
 ## Security & Implementation Details
 
 - **Field Arithmetic**: Uses GF(2^8) with the AES irreducible polynomial $x^8 + x^4 + x^3 + x + 1$ (0x11B). This allows perfect reconstruction of all 256 byte values.
-- **Randomness**: Uses `crypto/rand` for cryptographic secure random coefficient generation.
+- **Randomness**: Uses `crypto/rand` for cryptographically secure random coefficient generation.
 - **Max Shares**: Supports up to 255 shares (indices 1-255).
 - **Constant Time**: Field multiplication uses log/exp table lookups. While efficient, table lookups may be susceptible to cache-timing side channels in extremely specific environments.
 
