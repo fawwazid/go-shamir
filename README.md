@@ -72,6 +72,9 @@ if err != nil {
 
 // Reconstruct with decoded shares
 recovered, err := goshamir.Combine(decoded[:3], 3)
+if err != nil {
+    log.Fatal(err)
+}
 ```
 
 ## API Reference

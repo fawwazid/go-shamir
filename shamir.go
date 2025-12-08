@@ -48,6 +48,7 @@ func Split(secret []byte, totalShares, threshold int) ([]Share, error) {
 		for i := 0; i < totalShares; i++ {
 			x := big.NewInt(int64(i + 1))
 			y := evaluatePolynomial(coeffs, x, prime)
+			// y is already in [0, FieldPrime-1] due to evaluatePolynomial
 			shares[i].Value = append(shares[i].Value, byte(y.Uint64()%256), byte(y.Uint64()/256))
 		}
 	}
@@ -125,7 +126,11 @@ func lagrangeInterpolate(shares []Share, bytePos int, prime *big.Int) (*big.Int,
 		}
 
 		xi := big.NewInt(int64(shares[i].Index))
-		yi := big.NewInt(int64(shares[i].Value[bytePos*2]) + int64(shares[i].Value[bytePos*2+1])*256)
+		yiVal := int64(shares[i].Value[bytePos*2]) + int64(shares[i].Value[bytePos*2+1])*256
+		if yiVal >= FieldPrime {
+			return nil, fmt.Errorf("share %d: decoded value %d out of field range [0, %d]", i, yiVal, FieldPrime-1)
+		}
+		yi := big.NewInt(yiVal)
 
 		num := big.NewInt(1)
 		den := big.NewInt(1)

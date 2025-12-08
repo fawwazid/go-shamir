@@ -25,7 +25,7 @@ func TestSplit_BasicFunctionality(t *testing.T) {
 		if share.Index != expectedIndex {
 			t.Errorf("Share %d: expected index %d, got %d", i, expectedIndex, share.Index)
 		}
-		// Each byte becomes 2 bytes (for prime > 256).
+		// Each byte becomes 2 bytes (for FieldPrime = 257, i.e., prime field GF(257)).
 		expectedLen := len(secret) * 2
 		if len(share.Value) != expectedLen {
 			t.Errorf("Share %d: expected value length %d, got %d", i, expectedLen, len(share.Value))
@@ -37,6 +37,13 @@ func TestSplit_EmptySecret(t *testing.T) {
 	_, err := Split([]byte{}, 5, 3)
 	if err == nil {
 		t.Error("Expected error for empty secret")
+	}
+}
+
+func TestSplit_NilSecret(t *testing.T) {
+	_, err := Split(nil, 5, 3)
+	if err == nil {
+		t.Error("Expected error for nil secret")
 	}
 }
 
@@ -167,6 +174,13 @@ func TestCombine_NoShares(t *testing.T) {
 	}
 }
 
+func TestCombine_NilShares(t *testing.T) {
+	_, err := Combine(nil, 3)
+	if err == nil {
+		t.Error("Expected error for nil shares")
+	}
+}
+
 func TestCombine_DuplicateIndices(t *testing.T) {
 	shares := []Share{
 		{Index: 1, Value: []byte{1, 0}},
@@ -212,6 +226,14 @@ func TestCombine_OddLengthShareValue(t *testing.T) {
 	_, err := Combine(shares, 3)
 	if err == nil {
 		t.Error("Expected error for odd-length share value")
+	}
+}
+
+func TestCombine_ThresholdTooLow(t *testing.T) {
+	shares, _ := Split([]byte("test"), 5, 3)
+	_, err := Combine(shares, 1)
+	if err == nil {
+		t.Error("Expected error for threshold < MinThreshold")
 	}
 }
 
@@ -265,6 +287,9 @@ func TestDecode_InvalidFormat(t *testing.T) {
 		"256:abc123", // Index out of range
 		"1:xyz",      // Invalid hex
 		"abc:123456", // Non-numeric index
+		"0:abc123",   // Zero index
+		"",           // Empty string
+		"1:",         // Empty value part
 	}
 
 	for _, input := range invalidInputs {
@@ -392,7 +417,9 @@ func TestSplitCombine_MaxShares(t *testing.T) {
 
 func BenchmarkSplit(b *testing.B) {
 	secret := make([]byte, 32)
-	rand.Read(secret)
+	if _, err := rand.Read(secret); err != nil {
+		b.Fatal(err)
+	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -402,7 +429,9 @@ func BenchmarkSplit(b *testing.B) {
 
 func BenchmarkCombine(b *testing.B) {
 	secret := make([]byte, 32)
-	rand.Read(secret)
+	if _, err := rand.Read(secret); err != nil {
+		b.Fatal(err)
+	}
 	shares, _ := Split(secret, 5, 3)
 
 	b.ResetTimer()
@@ -413,7 +442,9 @@ func BenchmarkCombine(b *testing.B) {
 
 func BenchmarkEncode(b *testing.B) {
 	secret := make([]byte, 32)
-	rand.Read(secret)
+	if _, err := rand.Read(secret); err != nil {
+		b.Fatal(err)
+	}
 	shares, _ := Split(secret, 5, 3)
 
 	b.ResetTimer()
