@@ -203,6 +203,18 @@ func TestCombine_InconsistentLengths(t *testing.T) {
 	}
 }
 
+func TestCombine_OddLengthShareValue(t *testing.T) {
+	shares := []Share{
+		{Index: 1, Value: []byte{1, 0, 2}}, // odd length: 3 bytes
+		{Index: 2, Value: []byte{3, 0, 4}},
+		{Index: 3, Value: []byte{5, 0, 6}},
+	}
+	_, err := Combine(shares, 3)
+	if err == nil {
+		t.Error("Expected error for odd-length share value")
+	}
+}
+
 // --- Encoding Tests ---
 
 func TestEncodeDecode_RoundTrip(t *testing.T) {
