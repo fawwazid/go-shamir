@@ -136,7 +136,7 @@ func validateCombineParams(shares []Share, threshold int) error {
 		return errors.New("share value cannot be empty")
 	}
 	if expectedLen%2 != 0 {
-		return errors.New("share value length must be divisible by 2 (2 bytes per secret byte)")
+		return errors.New("share value length must be even")
 	}
 	for i, s := range shares {
 		if len(s.Value) != expectedLen {
