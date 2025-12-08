@@ -76,7 +76,7 @@ func decodeShareFromHex(encoded string) (Share, error) {
 		return Share{}, ErrInvalidEncodedShare
 	}
 	if index == 0 {
-		return Share{}, errors.New("share index must be non-zero")
+		return Share{}, ErrInvalidEncodedShare
 	}
 
 	value, err := hex.DecodeString(parts[1])
@@ -84,7 +84,7 @@ func decodeShareFromHex(encoded string) (Share, error) {
 		return Share{}, ErrInvalidEncodedShare
 	}
 	if len(value) == 0 {
-		return Share{}, errors.New("share value cannot be empty")
+		return Share{}, ErrInvalidEncodedShare
 	}
 
 	return Share{Index: uint8(index), Value: value}, nil
