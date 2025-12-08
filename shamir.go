@@ -69,9 +69,6 @@ func Combine(shares []Share, threshold int) ([]byte, error) {
 	}
 
 	valueLen := len(shares[0].Value)
-	if valueLen%2 != 0 {
-		return nil, errors.New("invalid share value length")
-	}
 	secretLen := valueLen / 2
 	secret := make([]byte, secretLen)
 
@@ -80,7 +77,7 @@ func Combine(shares []Share, threshold int) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		secret[bytePos] = byte(result.Uint64())
+		secret[bytePos] = byte(result.Uint64() % 256)
 	}
 
 	return secret, nil

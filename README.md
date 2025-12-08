@@ -9,7 +9,7 @@ A cryptographically secure Go implementation of [Shamir's Secret Sharing](https:
 
 - **Information-theoretic security**: Fewer than threshold shares reveal zero information about the secret
 - **Cryptographically secure**: Uses `crypto/rand` for random number generation
-- **NIST-aligned**: Uses prime field GF(257) for full byte range support [0-255]
+- **Full byte range support**: Uses prime field GF(257) for secrets in [0-255]
 - **Zero dependencies**: Pure Go implementation with no external dependencies
 - **Flexible encoding**: Hex encoding utilities for easy storage and transmission
 

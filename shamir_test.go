@@ -203,6 +203,18 @@ func TestCombine_InconsistentLengths(t *testing.T) {
 	}
 }
 
+func TestCombine_OddLengthShareValue(t *testing.T) {
+	shares := []Share{
+		{Index: 1, Value: []byte{1, 0, 2}}, // odd length: 3 bytes
+		{Index: 2, Value: []byte{3, 0, 4}},
+		{Index: 3, Value: []byte{5, 0, 6}},
+	}
+	_, err := Combine(shares, 3)
+	if err == nil {
+		t.Error("Expected error for odd-length share value")
+	}
+}
+
 // --- Encoding Tests ---
 
 func TestEncodeDecode_RoundTrip(t *testing.T) {
@@ -260,6 +272,40 @@ func TestDecode_InvalidFormat(t *testing.T) {
 		if err == nil {
 			t.Errorf("Expected error for input %q", input)
 		}
+	}
+}
+
+func TestEncode_NilShares(t *testing.T) {
+	_, err := EncodeSharesToHex(nil)
+	if err != ErrNilShares {
+		t.Errorf("Expected ErrNilShares, got %v", err)
+	}
+}
+
+func TestEncode_EmptyShares(t *testing.T) {
+	result, err := EncodeSharesToHex([]Share{})
+	if err != nil {
+		t.Errorf("Expected no error for empty shares, got %v", err)
+	}
+	if len(result) != 0 {
+		t.Errorf("Expected empty result, got %v", result)
+	}
+}
+
+func TestDecode_NilEncoded(t *testing.T) {
+	_, err := DecodeSharesFromHex(nil)
+	if err != ErrNilEncoded {
+		t.Errorf("Expected ErrNilEncoded, got %v", err)
+	}
+}
+
+func TestDecode_EmptyEncoded(t *testing.T) {
+	result, err := DecodeSharesFromHex([]string{})
+	if err != nil {
+		t.Errorf("Expected no error for empty encoded, got %v", err)
+	}
+	if len(result) != 0 {
+		t.Errorf("Expected empty result, got %v", result)
 	}
 }
 
