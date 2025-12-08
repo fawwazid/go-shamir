@@ -150,7 +150,7 @@ func lagrangeInterpolate(shares []Share, bytePos int, prime *big.Int) (*big.Int,
 		}
 
 		xi := big.NewInt(int64(shares[i].Index))
-		yi := big.NewInt(int64(yiVal))
+		yi := big.NewInt(yiVal)
 
 		num := big.NewInt(1)
 		den := big.NewInt(1)
