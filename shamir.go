@@ -12,6 +12,7 @@ const (
 	// FieldPrime is the prime modulus for finite field GF(257).
 	FieldPrime = 257
 	// MaxShares is the maximum number of shares (uint8 limit).
+	// Share indices are uint8 in the range 1-255 (inclusive); index 0 is reserved/invalid.
 	MaxShares = 255
 	// MinThreshold is the minimum threshold for security.
 	MinThreshold = 2
