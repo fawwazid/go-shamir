@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/fawwazid/go-shamir/compare/v1.1.0...v1.1.1) (2025-12-08)
+
+
+### Bug Fixes
+
+* ensure release-type is specified in release-please configuration ([0f5fb4e](https://github.com/fawwazid/go-shamir/commit/0f5fb4e2b086415e990281db69f7f1b73f910099))
+
 ## [1.1.0](https://github.com/fawwazid/go-shamir/compare/v1.0.0...v1.1.0) (2025-12-08)
 
 
