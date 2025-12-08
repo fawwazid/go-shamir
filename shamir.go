@@ -48,9 +48,8 @@ func Split(secret []byte, totalShares, threshold int) ([]Share, error) {
 		for i := 0; i < totalShares; i++ {
 			x := big.NewInt(int64(i + 1))
 			y := evaluatePolynomial(coeffs, x, prime)
-			// Defensive: ensure y is in [0, FieldPrime-1]
-			yMod := new(big.Int).Mod(y, prime)
-			shares[i].Value = append(shares[i].Value, byte(yMod.Uint64()%256), byte(yMod.Uint64()/256))
+			// y is already in [0, FieldPrime-1] due to evaluatePolynomial
+			shares[i].Value = append(shares[i].Value, byte(y.Uint64()%256), byte(y.Uint64()/256))
 		}
 	}
 
