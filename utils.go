@@ -43,9 +43,6 @@ func DecodeSharesFromHex(encoded []string) ([]Share, error) {
 	}
 	shares := make([]Share, len(encoded))
 	for i, v := range encoded {
-		if v == "" {
-			return nil, fmt.Errorf("encoded string at index %d is empty", i)
-		}
 		share, err := decodeShareFromHex(v)
 		if err != nil {
 			return nil, fmt.Errorf("invalid share at index %d: %w", i, err)
@@ -131,14 +128,20 @@ func validateCombineParams(shares []Share, threshold int) error {
 		return errors.New("insufficient shares: need at least threshold shares")
 	}
 
-	expectedLen := len(shares[0].Value)
+	// Only validate the first threshold shares since those are the ones that will be used
+	usedShares := shares
+	if len(shares) > threshold {
+		usedShares = shares[:threshold]
+	}
+
+	expectedLen := len(usedShares[0].Value)
 	if expectedLen == 0 {
 		return errors.New("share value cannot be empty")
 	}
 	if expectedLen%2 != 0 {
 		return errors.New("share value length must be even")
 	}
-	for i, s := range shares {
+	for i, s := range usedShares {
 		if len(s.Value) != expectedLen {
 			return fmt.Errorf("share %d has inconsistent length", i)
 		}

@@ -49,7 +49,7 @@ func Split(secret []byte, totalShares, threshold int) ([]Share, error) {
 		for i := 0; i < totalShares; i++ {
 			x := big.NewInt(int64(i + 1))
 			y := evaluatePolynomial(coeffs, x, prime)
-			// y is already in [0, FieldPrime-1] due to evaluatePolynomial
+			// y is already in [0, 256] due to evaluatePolynomial
 			val := y.Uint64()
 			shares[i].Value = append(shares[i].Value, byte(val&0xFF), byte((val>>8)&0xFF))
 		}
@@ -122,6 +122,7 @@ func lagrangeInterpolate(shares []Share, bytePos int, prime *big.Int) (*big.Int,
 
 	result := big.NewInt(0)
 
+	// Each secret byte is stored as two consecutive bytes in the share value.
 	for i := range shares {
 		if bytePos*2+1 >= len(shares[i].Value) {
 			return nil, fmt.Errorf("share %d: byte position out of range", i)
@@ -129,6 +130,9 @@ func lagrangeInterpolate(shares []Share, bytePos int, prime *big.Int) (*big.Int,
 
 		xi := big.NewInt(int64(shares[i].Index))
 		yiVal := int64(shares[i].Value[bytePos*2]) + int64(shares[i].Value[bytePos*2+1])*256
+		// Although two bytes can encode values up to 65535, evaluatePolynomial only produces values in [0, 256].
+		// This check ensures that decoded values are within the field range [0, FieldPrime-1].
+		// Any value >= FieldPrime indicates a corrupted or invalid share.
 		if yiVal >= FieldPrime {
 			return nil, fmt.Errorf("share %d: decoded value %d out of field range [0, %d]", i, yiVal, FieldPrime-1)
 		}
