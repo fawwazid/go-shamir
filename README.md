@@ -91,33 +91,47 @@ type Share struct {
 
 ### Functions
 
-| Function | Description |
-|----------|-------------|
-| `Split(secret []byte, totalShares, threshold int) ([]Share, error)` | Splits a secret into shares |
-| `Combine(shares []Share, threshold int) ([]byte, error)` | Reconstructs the secret from shares |
-| `EncodeSharesToHex(shares []Share) ([]string, error)` | Encodes shares to hex strings |
-| `DecodeSharesFromHex(encoded []string) ([]Share, error)` | Decodes hex strings to shares |
+| Function                                                            | Description                         |
+| ------------------------------------------------------------------- | ----------------------------------- |
+| `Split(secret []byte, totalShares, threshold int) ([]Share, error)` | Splits a secret into shares         |
+| `Combine(shares []Share, threshold int) ([]byte, error)`            | Reconstructs the secret from shares |
+| `EncodeSharesToHex(shares []Share) ([]string, error)`               | Encodes shares to hex strings       |
+| `DecodeSharesFromHex(encoded []string) ([]Share, error)`            | Decodes hex strings to shares       |
 
 ### Constants
 
-| Constant | Value | Description |
-|----------|-------|-------------|
-| `FieldPrime` | 257 | Prime modulus for finite field |
-| `MaxShares` | 255 | Maximum number of shares |
-| `MinThreshold` | 2 | Minimum threshold value |
+| Constant       | Value | Description                    |
+| -------------- | ----- | ------------------------------ |
+| `FieldPrime`   | 257   | Prime modulus for finite field |
+| `MaxShares`    | 255   | Maximum number of shares       |
+| `MinThreshold` | 2     | Minimum threshold value        |
 
 ## Security Considerations
 
-- **Threshold Selection**: Choose a threshold that balances security and availability
-- **Share Distribution**: Distribute shares to independent parties or locations
-- **Share Storage**: Protect individual shares as you would protect the secret
-- **Random Generation**: Uses Go's `crypto/rand` for cryptographic randomness
+- **Threshold Selection**: Choose a threshold that balances security and availability. A higher threshold makes the secret harder to compromise but harder to recover if shares are lost.
+- **Share Distribution**: Distribute shares to independent parties or separate locations to prevent a single point of failure or compromise.
+- **Share Storage**: Protect individual shares as sensitive data. Anyone with enough shares can reconstruct the secret.
+- **Random Generation**: This library uses Go's `crypto/rand` for cryptographic randomness, ensuring that shares are unpredictable.
 
 ## Testing
+
+Run the test suite:
 
 ```bash
 go test ./...
 ```
+
+## Benchmarks
+
+Run benchmarks to check performance:
+
+```bash
+go test -bench=. ./...
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
