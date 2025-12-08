@@ -8,14 +8,15 @@ import (
 	"strings"
 )
 
-// ErrInvalidEncodedShare indicates an invalid encoded share format.
+// ErrInvalidEncodedShare is returned when a share string cannot be parsed
+// due to invalid format, non-hex characters, or out-of-range index values.
 var ErrInvalidEncodedShare = errors.New("invalid encoded share format")
 
-// ErrNilShares indicates nil shares input.
+// ErrNilShares is returned when a nil share slice is provided to EncodeSharesToHex.
 var ErrNilShares = errors.New("shares cannot be nil")
 
-// ErrEmptyEncoded indicates empty encoded input.
-var ErrEmptyEncoded = errors.New("encoded data cannot be empty")
+// ErrNilEncoded is returned when a nil encoded slice is provided to DecodeSharesFromHex.
+var ErrNilEncoded = errors.New("encoded data cannot be nil")
 
 // EncodeSharesToHex converts shares to hex string format "index:hexvalue".
 func EncodeSharesToHex(shares []Share) ([]string, error) {
@@ -35,7 +36,7 @@ func EncodeSharesToHex(shares []Share) ([]string, error) {
 // DecodeSharesFromHex converts hex-encoded strings back to shares.
 func DecodeSharesFromHex(encoded []string) ([]Share, error) {
 	if encoded == nil {
-		return nil, ErrEmptyEncoded
+		return nil, ErrNilEncoded
 	}
 	if len(encoded) == 0 {
 		return []Share{}, nil
@@ -75,7 +76,7 @@ func decodeShareFromHex(encoded string) (Share, error) {
 		return Share{}, ErrInvalidEncodedShare
 	}
 	if index == 0 {
-		return Share{}, errors.New("share index cannot be zero")
+		return Share{}, errors.New("share index must be non-zero")
 	}
 
 	value, err := hex.DecodeString(parts[1])
@@ -133,6 +134,9 @@ func validateCombineParams(shares []Share, threshold int) error {
 	expectedLen := len(shares[0].Value)
 	if expectedLen == 0 {
 		return errors.New("share value cannot be empty")
+	}
+	if expectedLen%2 != 0 {
+		return errors.New("share value length must be divisible by 2 (2 bytes per secret byte)")
 	}
 	for i, s := range shares {
 		if len(s.Value) != expectedLen {

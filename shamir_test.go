@@ -263,6 +263,40 @@ func TestDecode_InvalidFormat(t *testing.T) {
 	}
 }
 
+func TestEncode_NilShares(t *testing.T) {
+	_, err := EncodeSharesToHex(nil)
+	if err != ErrNilShares {
+		t.Errorf("Expected ErrNilShares, got %v", err)
+	}
+}
+
+func TestEncode_EmptyShares(t *testing.T) {
+	result, err := EncodeSharesToHex([]Share{})
+	if err != nil {
+		t.Errorf("Expected no error for empty shares, got %v", err)
+	}
+	if len(result) != 0 {
+		t.Errorf("Expected empty result, got %v", result)
+	}
+}
+
+func TestDecode_NilEncoded(t *testing.T) {
+	_, err := DecodeSharesFromHex(nil)
+	if err != ErrNilEncoded {
+		t.Errorf("Expected ErrNilEncoded, got %v", err)
+	}
+}
+
+func TestDecode_EmptyEncoded(t *testing.T) {
+	result, err := DecodeSharesFromHex([]string{})
+	if err != nil {
+		t.Errorf("Expected no error for empty encoded, got %v", err)
+	}
+	if len(result) != 0 {
+		t.Errorf("Expected empty result, got %v", result)
+	}
+}
+
 // --- Edge Cases ---
 
 func TestSplitCombine_SingleByte(t *testing.T) {
