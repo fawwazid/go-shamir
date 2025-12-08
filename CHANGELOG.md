@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0](https://github.com/fawwazid/go-shamir/compare/v1.0.0...v1.1.0) (2025-12-08)
+
+
+### Features
+
+* Add initial release-please manifest configuration ([12b5cdf](https://github.com/fawwazid/go-shamir/commit/12b5cdf8fb461ded07824b2aa22ae991fab06120))
+* Add release-please configuration for automated releases and improve README documentation with expanded sections and formatting. ([#14](https://github.com/fawwazid/go-shamir/issues/14)) ([e223c82](https://github.com/fawwazid/go-shamir/commit/e223c820e8eb5f1ad634c1848c64f3f80c066960))
+
 ## 1.0.0 (2025-12-08)
 
 
