@@ -237,6 +237,17 @@ func TestCombine_ThresholdTooLow(t *testing.T) {
 	}
 }
 
+func TestCombine_RejectsReconstructedValueOutsideByteRange(t *testing.T) {
+	shares := []Share{
+		{Index: 1, Value: []byte{0, 1}}, // Field element 256.
+		{Index: 2, Value: []byte{0, 1}},
+	}
+
+	if _, err := Combine(shares, 2); err == nil {
+		t.Fatal("expected error when interpolation reconstructs field element 256")
+	}
+}
+
 // --- Encoding Tests ---
 
 func TestEncodeDecode_RoundTrip(t *testing.T) {
