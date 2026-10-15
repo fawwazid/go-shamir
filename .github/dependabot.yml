@@ -9,12 +9,12 @@ updates:
       timezone: "Asia/Jakarta"
     open-pull-requests-limit: 5
     groups:
-      go-dependencies:
+      go-minor-patch:
         patterns:
           - "*"
-    commit-message:
-      prefix: "chore(deps)"
-
+        update-types:
+          - "minor"
+          - "patch"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -24,8 +24,9 @@ updates:
       timezone: "Asia/Jakarta"
     open-pull-requests-limit: 5
     groups:
-      github-actions:
+      actions-minor-patch:
         patterns:
           - "*"
-    commit-message:
-      prefix: "chore(deps)"
+        update-types:
+          - "minor"
+          - "patch"
