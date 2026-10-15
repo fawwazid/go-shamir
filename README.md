@@ -1,7 +1,6 @@
 # Go - Shamir's Secret Sharing
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/fawwazid/go-shamir.svg)](https://pkg.go.dev/github.com/fawwazid/go-shamir)
-[![Go Report Card](https://goreportcard.com/badge/github.com/fawwazid/go-shamir)](https://goreportcard.com/report/github.com/fawwazid/go-shamir)
 
 A cryptographically secure Go implementation of [Shamir's Secret Sharing](https://dl.acm.org/doi/10.1145/359168.359176) scheme for splitting sensitive data into multiple shares.
 
