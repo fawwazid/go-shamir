@@ -79,7 +79,10 @@ func Combine(shares []Share, threshold int) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		secret[bytePos] = byte(result.Uint64() % 256)
+		if result.Uint64() > 255 {
+			return nil, fmt.Errorf("reconstructed value at byte position %d is outside byte range", bytePos)
+		}
+		secret[bytePos] = byte(result.Uint64())
 	}
 
 	return secret, nil
@@ -93,6 +96,9 @@ func generatePolynomialCoeffs(secretByte byte, threshold int, prime *big.Int) ([
 		if err != nil {
 			return nil, fmt.Errorf("random coefficient generation failed: %w", err)
 		}
+		// Every coefficient must be uniform over the complete field, including
+		// zero. Excluding zero leaks information about the secret to fewer than
+		// threshold shares and breaks Shamir's perfect-secrecy property.
 		coeffs[i] = c
 	}
 	return coeffs, nil

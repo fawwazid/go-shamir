@@ -112,6 +112,8 @@ type Share struct {
 - **Share Distribution**: Distribute shares to independent parties or separate locations to prevent a single point of failure or compromise.
 - **Share Storage**: Protect individual shares as sensitive data. Anyone with enough shares can reconstruct the secret.
 - **Random Generation**: This library uses Go's `crypto/rand` for cryptographic randomness, ensuring that shares are unpredictable.
+- **Integrity and Authenticity**: The encoded share format does not authenticate shares. Distribute and store shares using an authenticated, integrity-protected mechanism, and never combine shares from untrusted or different sets.
+- **Compliance**: This package has not been evaluated or validated under FIPS 140-3 and must not be represented as NIST- or FIPS-compliant. Compliance also depends on the validated runtime, operating environment, key-management procedures, and operational controls used by the application.
 
 ## Testing
 
