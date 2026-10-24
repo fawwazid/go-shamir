@@ -1,139 +1,48 @@
-# Go - Shamir's Secret Sharing
+# go-shamir
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/fawwazid/go-shamir.svg)](https://pkg.go.dev/github.com/fawwazid/go-shamir)
+Install: `go get github.com/fawwazid/go-shamir/v2@v2.0.0`.
+See [v2 release notes](CHANGELOG.md) for breaking changes.
 
-A cryptographically secure Go implementation of [Shamir's Secret Sharing](https://dl.acm.org/doi/10.1145/359168.359176) scheme for splitting sensitive data into multiple shares.
+GF(257) Shamir secret sharing for Go 1.27.3, with no external dependencies.
 
-## Features
-
-- **Information-theoretic security**: Fewer than threshold shares reveal zero information about the secret
-- **Cryptographically secure**: Uses `crypto/rand` for random number generation
-- **Full byte range support**: Uses prime field GF(257) for secrets in [0-255]
-- **Zero dependencies**: Pure Go implementation with no external dependencies
-- **Flexible encoding**: Hex encoding utilities for easy storage and transmission
-
-## Installation
-
-```bash
-go get github.com/fawwazid/go-shamir
-```
-
-## Quick Start
-
-Split a secret into `n` shares, requiring `k` (threshold) shares to reconstruct:
+## Usage
 
 ```go
 package main
 
 import (
-    "fmt"
-    "log"
-
-    goshamir "github.com/fawwazid/go-shamir"
+ "fmt"
+ "log"
+ shamir "github.com/fawwazid/go-shamir/v2"
 )
 
 func main() {
-    secret := []byte("my-encryption-key-32-bytes-long!")
-
-    // Split into 5 shares, requiring 3 to reconstruct
-    shares, err := goshamir.Split(secret, 5, 3)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    // Any 3 shares can reconstruct the secret
-    recovered, err := goshamir.Combine(shares[:3], 3)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    fmt.Printf("Recovered: %s\n", recovered)
+ shares, err := shamir.Split([]byte("example secret"), 5, 3)
+ if err != nil { log.Fatal(err) }
+ encoded, err := shamir.EncodeSharesToHex(shares[:3])
+ if err != nil { log.Fatal(err) }
+ decoded, err := shamir.DecodeSharesFromHex(encoded)
+ if err != nil { log.Fatal(err) }
+ secret, err := shamir.Combine(decoded, 3)
+ if err != nil { log.Fatal(err) }
+ fmt.Println(string(secret))
 }
 ```
 
-## Share Encoding
+## API and security
 
-Convert shares to hex strings for storage or transmission:
+`Split(secret, total, threshold)` and `Combine(shares, threshold)` require a
+threshold of at least two and at most 255 shares. Each share has a unique,
+nonzero index. Each field element uses two bytes in little-endian order.
+Hex helpers encode `index:hexvalue`.
 
-```go
-// Encode shares to portable hex format
-encoded, err := goshamir.EncodeSharesToHex(shares)
-if err != nil {
-    log.Fatal(err)
-}
-// Result: ["1:a1b2c3...", "2:d4e5f6...", ...]
+Fewer than threshold correctly generated shares reveal no secret information.
+The implementation does not authenticate shares, and `math/big` is not
+constant-time. Protect shares independently and never mix sets.
 
-// Decode back to shares
-decoded, err := goshamir.DecodeSharesFromHex(encoded)
-if err != nil {
-    log.Fatal(err)
-}
+This implementation is outside Go's validated cryptographic module.
+`Split` and `Combine` return `ErrFIPSUnsupported` when FIPS mode is active.
+There is no alternate cryptographic implementation or conversion path.
 
-// Reconstruct with decoded shares
-recovered, err := goshamir.Combine(decoded[:3], 3)
-if err != nil {
-    log.Fatal(err)
-}
-```
-
-## API Reference
-
-### Types
-
-```go
-// Share represents a single piece of the secret
-type Share struct {
-    Index uint8  // Unique identifier (1-255)
-    Value []byte // Share data
-}
-```
-
-### Functions
-
-| Function                                                            | Description                         |
-| ------------------------------------------------------------------- | ----------------------------------- |
-| `Split(secret []byte, totalShares, threshold int) ([]Share, error)` | Splits a secret into shares         |
-| `Combine(shares []Share, threshold int) ([]byte, error)`            | Reconstructs the secret from shares |
-| `EncodeSharesToHex(shares []Share) ([]string, error)`               | Encodes shares to hex strings       |
-| `DecodeSharesFromHex(encoded []string) ([]Share, error)`            | Decodes hex strings to shares       |
-
-### Constants
-
-| Constant       | Value | Description                    |
-| -------------- | ----- | ------------------------------ |
-| `FieldPrime`   | 257   | Prime modulus for finite field |
-| `MaxShares`    | 255   | Maximum number of shares       |
-| `MinThreshold` | 2     | Minimum threshold value        |
-
-## Security Considerations
-
-- **Threshold Selection**: Choose a threshold that balances security and availability. A higher threshold makes the secret harder to compromise but harder to recover if shares are lost.
-- **Share Distribution**: Distribute shares to independent parties or separate locations to prevent a single point of failure or compromise.
-- **Share Storage**: Protect individual shares as sensitive data. Anyone with enough shares can reconstruct the secret.
-- **Random Generation**: This library uses Go's `crypto/rand` for cryptographic randomness, ensuring that shares are unpredictable.
-- **Integrity and Authenticity**: The encoded share format does not authenticate shares. Distribute and store shares using an authenticated, integrity-protected mechanism, and never combine shares from untrusted or different sets.
-- **Compliance**: This package has not been evaluated or validated under FIPS 140-3 and must not be represented as NIST- or FIPS-compliant. Compliance also depends on the validated runtime, operating environment, key-management procedures, and operational controls used by the application.
-
-## Testing
-
-Run the test suite:
-
-```bash
-go test ./...
-```
-
-## Benchmarks
-
-Run benchmarks to check performance:
-
-```bash
-go test -bench=. ./...
-```
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-See the [LICENSE](LICENSE) file.
+See [SECURITY.md](SECURITY.md). Run `go test ./...` and `go vet ./...`.
+License: [MIT](LICENSE).

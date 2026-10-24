@@ -26,6 +26,9 @@ type Share struct {
 
 // Split divides a secret into n shares requiring k shares to reconstruct.
 func Split(secret []byte, totalShares, threshold int) ([]Share, error) {
+	if err := checkNonFIPSOperation(); err != nil {
+		return nil, err
+	}
 	if err := validateSplitParams(secret, totalShares, threshold); err != nil {
 		return nil, err
 	}
@@ -59,6 +62,9 @@ func Split(secret []byte, totalShares, threshold int) ([]Share, error) {
 
 // Combine reconstructs the secret from shares using Lagrange interpolation.
 func Combine(shares []Share, threshold int) ([]byte, error) {
+	if err := checkNonFIPSOperation(); err != nil {
+		return nil, err
+	}
 	if err := validateCombineParams(shares, threshold); err != nil {
 		return nil, err
 	}
@@ -118,8 +124,7 @@ func evaluatePolynomial(coeffs []*big.Int, x, prime *big.Int) *big.Int {
 }
 
 // appendFieldElement appends a field element (assumed to be < 2^16) to the
-// backing slice using two bytes (little-endian) to preserve compatibility
-// with existing share encoding.
+// backing slice using the canonical two-byte little-endian field encoding.
 func appendFieldElement(dst []byte, value uint64) []byte {
 	return append(dst, byte(value&0xFF), byte((value>>8)&0xFF))
 }
