@@ -23,9 +23,6 @@ func EncodeSharesToHex(shares []Share) ([]string, error) {
 	if shares == nil {
 		return nil, ErrNilShares
 	}
-	if len(shares) == 0 {
-		return []string{}, nil
-	}
 	result := make([]string, len(shares))
 	for i, s := range shares {
 		result[i] = encodeShareToHex(s)
@@ -37,9 +34,6 @@ func EncodeSharesToHex(shares []Share) ([]string, error) {
 func DecodeSharesFromHex(encoded []string) ([]Share, error) {
 	if encoded == nil {
 		return nil, ErrNilEncoded
-	}
-	if len(encoded) == 0 {
-		return []Share{}, nil
 	}
 	shares := make([]Share, len(encoded))
 	for i, v := range encoded {
@@ -57,18 +51,12 @@ func encodeShareToHex(s Share) string {
 }
 
 func decodeShareFromHex(encoded string) (Share, error) {
-	if encoded == "" {
-		return Share{}, ErrInvalidEncodedShare
-	}
-	parts := strings.SplitN(encoded, ":", 2)
-	if len(parts) != 2 {
-		return Share{}, ErrInvalidEncodedShare
-	}
-	if parts[0] == "" || parts[1] == "" {
+	indexText, valueText, ok := strings.Cut(encoded, ":")
+	if !ok {
 		return Share{}, ErrInvalidEncodedShare
 	}
 
-	index, err := strconv.ParseUint(parts[0], 10, 8)
+	index, err := strconv.ParseUint(indexText, 10, 8)
 	if err != nil {
 		return Share{}, ErrInvalidEncodedShare
 	}
@@ -76,7 +64,7 @@ func decodeShareFromHex(encoded string) (Share, error) {
 		return Share{}, ErrInvalidEncodedShare
 	}
 
-	value, err := hex.DecodeString(parts[1])
+	value, err := hex.DecodeString(valueText)
 	if err != nil {
 		return Share{}, ErrInvalidEncodedShare
 	}
