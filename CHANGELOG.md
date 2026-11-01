@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.0.1](https://github.com/fawwazid/go-shamir/compare/v2.0.0...v2.0.1) (2026-11-01)
+
+
+### Bug Fixes
+
+* **release:** configure semantic versioning ([#21](https://github.com/fawwazid/go-shamir/issues/21)) ([edd9786](https://github.com/fawwazid/go-shamir/commit/edd97865b17ab4d9e86df84277a912c86256eafb))
+
+
+### Chores
+
+* configure Google Release Please ([0effc6c](https://github.com/fawwazid/go-shamir/commit/0effc6c50cd70cec31eb3d748dc93487ae3c5db8))
+* reset Release Please baseline ([a33fbf1](https://github.com/fawwazid/go-shamir/commit/a33fbf1fdc1f2e505d898420b49ebe554857085d))
+* sync agent skill setup ([b95c05f](https://github.com/fawwazid/go-shamir/commit/b95c05fd967833768cc03c5c276b81887f72508e))
+
+
+### Security
+
+* bound share inputs and validation ([#20](https://github.com/fawwazid/go-shamir/issues/20)) ([7c65f00](https://github.com/fawwazid/go-shamir/commit/7c65f001311beb810ebed835c5d3d4aedb900e88))
+
 ## v2.0.0 — 2026-10-24
 
 Define explicit secret-sharing boundaries and disable operations in FIPS mode.
