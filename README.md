@@ -31,8 +31,9 @@ func main() {
 
 ## API and security
 
-`Split(secret, total, threshold)` and `Combine(shares, threshold)` require a
-threshold of at least two and at most 255 shares. Each share has a unique,
+`Split(secret, total, threshold)` and `Combine(shares, threshold)` accept
+secrets up to 4096 bytes, thresholds from 2 to 32, and at most 255 total
+shares. Each share has a unique,
 nonzero index. Each field element uses two bytes in little-endian order.
 Hex helpers encode `index:hexvalue`.
 
