@@ -2,6 +2,21 @@
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
   "last-release-sha": "a28321f53b95c4a85575b0b454a2d634387ad3ac",
   "release-type": "go",
+  "changelog-sections": [
+    {"type": "feat", "section": "Features"},
+    {"type": "fix", "section": "Bug Fixes"},
+    {"type": "perf", "section": "Performance Improvements"},
+    {"type": "deps", "section": "Dependencies"},
+    {"type": "revert", "section": "Reverts"},
+    {"type": "refactor", "section": "Refactors"},
+    {"type": "docs", "section": "Documentation"},
+    {"type": "style", "section": "Styles"},
+    {"type": "build", "section": "Build System"},
+    {"type": "chore", "section": "Chores"},
+    {"type": "security", "section": "Security"},
+    {"type": "test", "section": "Tests", "hidden": true},
+    {"type": "ci", "section": "Continuous Integration", "hidden": true}
+  ],
   "packages": {
     ".": {}
   }
