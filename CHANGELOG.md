@@ -24,3 +24,19 @@ Define explicit secret-sharing boundaries and disable operations in FIPS mode.
 ```sh
 go get github.com/fawwazid/go-shamir/v2@v2.0.0
 ```
+
+## v1.1.2 — 2026-10-15
+
+- Harden secret sharing and repository security.
+
+## v1.1.1 — 2025-12-08
+
+- Correct the release type in the Release Please configuration.
+
+## v1.1.0 — 2025-12-08
+
+- Add Release Please automation and expand the project documentation.
+
+## v1.0.0 — 2025-11-27
+
+- Initial release of Shamir's Secret Sharing implementation, validation, and tests.
