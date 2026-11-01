@@ -2,17 +2,18 @@
 
 ## Current contract
 
-This GF(257) implementation is outside the validated module and uses
+This GF(257) implementation is not a NIST-approved or FIPS-validated
+cryptographic algorithm; it is outside the validated module and uses
 variable-time math/big arithmetic. Split and Combine return ErrFIPSUnsupported
 in FIPS mode. Encoding helpers do not perform cryptographic secret sharing.
+Secrets are limited to 4096 bytes, thresholds to 32, and encoded share counts
+and sizes are bounded to limit CPU and memory consumption.
 Shares are not authenticated: protect their confidentiality and integrity,
 keep sets separate, and manage access and destruction in the application.
 No alternate backend or format conversion is attempted.
 
-This release removes source and behavior compatibility with the APIs listed
-under Breaking changes in README.md. Unsupported inputs are rejected.
-Applications must replace unsupported records or enrollments before upgrading;
-this library does not provide conversion or permissive verification helpers.
+Review the Breaking changes section in README.md before upgrading. Removed APIs
+and unsupported inputs have no compatibility fallback or conversion helper.
 
 ## FIPS deployment
 
@@ -23,7 +24,7 @@ for its caller.
 
 The baseline is Go 1.27.3. The frozen Go module v1.0.0 corresponds to
 [CMVP certificate 5247](https://csrc.nist.gov/projects/cryptographic-module-validation-program/certificate/5247),
-checked active on 2026-10-24. Review certificate status and operating-environment
+checked active on 2026-11-01. Review certificate status and operating-environment
 coverage before deployment. A consuming application can build with
 GOFIPS140=v1.0.0 and must not override it with fips140=off.
 The strict only setting below is an assessment aid, not a production setting.
@@ -51,9 +52,8 @@ In PowerShell, set the variables with
 `'fips140=only'`, then run the go test command. Restore the original environment
 after checking.
 
-CI is configured for Windows and Linux, including Linux race detection.
-Local validation is limited to the platform and commands actually executed;
-see the workspace SECURITY_REVIEW.md for the recorded results.
+Run these checks on the target operating systems and Go version used for
+deployment, and record the environment and results in your project review.
 
 ## References
 

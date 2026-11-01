@@ -14,6 +14,10 @@ const (
 	// MaxShares is the maximum number of shares (uint8 limit).
 	// Share indices are uint8 in the range 1-255 (inclusive); index 0 is reserved/invalid.
 	MaxShares = 255
+	// MaxThreshold bounds quadratic reconstruction work.
+	MaxThreshold = 32
+	// MaxSecretLength bounds per-call memory and computation.
+	MaxSecretLength = 4096
 	// MinThreshold is the minimum threshold for security.
 	MinThreshold = 2
 )
@@ -201,11 +205,14 @@ func validateSplitParams(secret []byte, totalShares, threshold int) error {
 	if len(secret) == 0 {
 		return errors.New("secret must not be empty")
 	}
+	if len(secret) > MaxSecretLength {
+		return fmt.Errorf("secret length must not exceed %d bytes", MaxSecretLength)
+	}
 	if threshold < MinThreshold {
 		return fmt.Errorf("threshold must be at least %d", MinThreshold)
 	}
-	if threshold > MaxShares {
-		return fmt.Errorf("threshold must be <= %d", MaxShares)
+	if threshold > MaxThreshold {
+		return fmt.Errorf("threshold must be <= %d", MaxThreshold)
 	}
 	if totalShares < threshold {
 		return errors.New("totalShares must be >= threshold")
@@ -224,11 +231,14 @@ func validateCombineParams(shares []Share, threshold int) error {
 	if len(shares) == 0 {
 		return errors.New("no shares provided")
 	}
+	if len(shares) > MaxShares {
+		return fmt.Errorf("share count must not exceed %d", MaxShares)
+	}
 	if threshold < MinThreshold {
 		return fmt.Errorf("threshold must be at least %d", MinThreshold)
 	}
-	if threshold > MaxShares {
-		return fmt.Errorf("threshold must be <= %d", MaxShares)
+	if threshold > MaxThreshold {
+		return fmt.Errorf("threshold must be <= %d", MaxThreshold)
 	}
 	if len(shares) < threshold {
 		return errors.New("insufficient shares: need at least threshold shares")
@@ -243,6 +253,9 @@ func validateCombineParams(shares []Share, threshold int) error {
 	expectedLen := len(usedShares[0].Value)
 	if expectedLen == 0 {
 		return errors.New("share value cannot be empty")
+	}
+	if expectedLen > MaxSecretLength*2 {
+		return fmt.Errorf("share value exceeds the maximum secret length of %d bytes", MaxSecretLength)
 	}
 	if expectedLen%2 != 0 {
 		return errors.New("share value length must be even")
