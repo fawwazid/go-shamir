@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.2](https://github.com/fawwazid/go-shamir/compare/v2.0.1...v2.0.2) (2026-11-08)
+
+
+### Documentation
+
+* document branch and pull request workflow ([6edb68c](https://github.com/fawwazid/go-shamir/commit/6edb68cbd87fef51527872e97793ae0cfdcca9f7))
+
 ## [2.0.1](https://github.com/fawwazid/go-shamir/compare/v2.0.0...v2.0.1) (2026-11-01)
 
 
