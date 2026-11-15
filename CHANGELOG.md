@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.3](https://github.com/fawwazid/go-shamir/compare/v2.0.2...v2.0.3) (2026-11-15)
+
+
+### Bug Fixes
+
+* **security:** require patched Go toolchain ([#24](https://github.com/fawwazid/go-shamir/issues/24)) ([#25](https://github.com/fawwazid/go-shamir/issues/25)) ([296fa41](https://github.com/fawwazid/go-shamir/commit/296fa41fedf001090d858bf2043e8362585f083f))
+
 ## [2.0.2](https://github.com/fawwazid/go-shamir/compare/v2.0.1...v2.0.2) (2026-11-08)
 
 
