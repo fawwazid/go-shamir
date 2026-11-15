@@ -3,7 +3,7 @@
 Install: `go get github.com/fawwazid/go-shamir/v2@v2.0.0`.
 See [v2 release notes](CHANGELOG.md) for breaking changes.
 
-GF(257) Shamir secret sharing for Go 1.27.3, with no external dependencies.
+GF(257) Shamir secret sharing for Go 1.27.4, with no external dependencies.
 
 ## Usage
 
